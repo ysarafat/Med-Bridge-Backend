@@ -41,6 +41,7 @@ async function run() {
     const db = client.db("assignment");
     const collection = db.collection("users");
     const postCollection = db.collection("posts");
+    const donorsCollection = db.collection("donors");
 
     // User Registration
     app.post("/api/v1/register", async (req, res) => {
@@ -252,6 +253,114 @@ async function run() {
         });
       }
     });
+
+    // add donors 
+    app.post("/api/v1/add-donor", async (req, res) => {
+      try {
+       
+        const result = await donorsCollection.insertOne(req.body);
+      
+        res.status(201).json({
+          success: true,
+          message: "Donor added successfully",
+          data: result,
+        });
+      } catch (error) {
+        res.status(500).json({
+          success: false,
+          message: "Something went wrong!",
+        });
+      }
+    });
+
+    // get all donors
+      app.get("/api/v1/all-donor", async (req, res) => {
+   
+          try {
+            const result = await donorsCollection.find().sort({ totalAmount: -1 }).toArray();
+    
+            if (result.length > 0) {
+                res.status(200).json({
+                    success: true,
+                    message: "Donors retrieved successfully",
+                    data: result,
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: "No donors found",
+                    data: [],
+                });
+            }
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: "Something went wrong!",
+            });
+        }
+      });
+
+          // get single donor
+    app.get("/api/v1/donor/:email", async (req, res) => {
+      try {
+        const {email} =req.params
+        const result = await donorsCollection.findOne({email})
+
+        if (result) {
+          res.status(200).json({
+            success: true,
+            message: "Donor retrieved successfully",
+            data: result,
+          });
+        } else {
+          res.status(404).json({
+            success: false,
+            message: "No donor found",
+            data: null,
+          });
+        }
+      } catch (error) {
+    
+        res.status(500).json({
+          success: false,
+          message: "Something went wrong!",
+        });
+      }
+    });
+    // update donor amount
+    app.patch("/api/v1/update-donate-amount/:email", async (req, res) => {
+      try {
+        const {email} =req.params
+        const {totalAmount} = req.body
+        console.log(totalAmount)
+        const result = await donorsCollection.findOne({email:email})
+
+        if (!result) {
+         return res.status(404).json({
+            success: false,
+            message: "No donor found",
+            data: null,
+          });
+        }
+        const updateAmount = {$set: {
+          totalAmount: totalAmount
+        }}
+        await donorsCollection.findOneAndUpdate({email:email}, updateAmount)
+
+        res.status(200).json({
+         success: true,
+         message: "Donation successfully",
+         data: null,
+       })
+      } catch (error) {
+        console.log(error)
+        res.status(500).json({
+          success: false,
+          message: "Something went wrong!",
+        });
+      }
+    });
+
     // ==============================================================
 
     // Start the server
