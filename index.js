@@ -63,7 +63,6 @@ async function run() {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Insert user into the database
-      await collection.insertOne({ name, email, password: hashedPassword ,});
       await collection.insertOne({ name, email, password: hashedPassword ,image});
 
       res.status(201).json({
