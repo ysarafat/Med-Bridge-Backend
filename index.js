@@ -44,6 +44,7 @@ async function run() {
     const donorsCollection = db.collection("donors");
     const volunteerCollection = db.collection("volunteers");
     const TestimonialsCollection = db.collection("testimonials")
+    const commentCollection = db.collection("comments")
 
     // User Registration
     app.post("/api/v1/register", async (req, res) => {
@@ -447,6 +448,51 @@ async function run() {
           res.status(404).json({
             success: false,
             message: "No testimonials found",
+            data: null,
+          });
+        }
+      } catch (error) {
+    
+        res.status(500).json({
+          success: false,
+          message: "Something went wrong!",
+        });
+      }
+    });
+
+    // add Comment 
+    app.post("/api/v1/add-comment", async (req, res) => {
+      try {
+        const result = await commentCollection.insertOne(req.body);
+        res.status(201).json({
+          success: true,
+          message: "Comment post successfully",
+          data: result,
+        });
+      } catch (error) {
+        res.status(500).json({
+          success: false,
+          message: "Something went wrong!",
+        });
+      }
+    });
+
+    // get all comments
+    app.get("/api/v1/all-comments", async (req, res) => {
+      try {
+    
+        const result = await commentCollection.find().toArray();
+
+        if (result) {
+          res.status(200).json({
+            success: true,
+            message: "Comments retrieved successfully",
+            data: result,
+          });
+        } else {
+          res.status(404).json({
+            success: false,
+            message: "No comments found",
             data: null,
           });
         }
