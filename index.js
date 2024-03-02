@@ -42,10 +42,12 @@ async function run() {
     const collection = db.collection("users");
     const postCollection = db.collection("posts");
     const donorsCollection = db.collection("donors");
+    const volunteerCollection = db.collection("volunteers");
+    const TestimonialsCollection = db.collection("testimonials")
 
     // User Registration
     app.post("/api/v1/register", async (req, res) => {
-      const { name, email, password } = req.body;
+      const { name, email, password,image } = req.body;
  
       // Check if email already exists
       const existingUser = await collection.findOne({ email });
@@ -60,7 +62,8 @@ async function run() {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Insert user into the database
-      await collection.insertOne({ name, email, password: hashedPassword });
+      await collection.insertOne({ name, email, password: hashedPassword ,});
+      await collection.insertOne({ name, email, password: hashedPassword ,image});
 
       res.status(201).json({
         success: true,
@@ -331,7 +334,7 @@ async function run() {
     app.patch("/api/v1/update-donate-amount/:email", async (req, res) => {
       try {
         const {email} =req.params
-        const {totalAmount} = req.body
+        const {totalAmount, post} = req.body
         console.log(totalAmount)
         const result = await donorsCollection.findOne({email:email})
 
@@ -343,7 +346,8 @@ async function run() {
           });
         }
         const updateAmount = {$set: {
-          totalAmount: totalAmount
+          totalAmount: totalAmount,
+          post: [...result.post, post]
         }}
         await donorsCollection.findOneAndUpdate({email:email}, updateAmount)
 
@@ -361,6 +365,99 @@ async function run() {
       }
     });
 
+    //   Join as Volunteer
+
+    app.post("/api/v1/add-volunteer", async (req, res) => {
+      try {
+       
+        const result = await volunteerCollection.insertOne(req.body);
+      
+        res.status(201).json({
+          success: true,
+          message: "Volunteer added successfully",
+          data: result,
+        });
+      } catch (error) {
+        res.status(500).json({
+          success: false,
+          message: "Something went wrong!",
+        });
+      }
+    });
+
+      // get all volunteer
+      app.get("/api/v1/all-volunteer", async (req, res) => {
+   
+        try {
+          const result = await volunteerCollection.find().sort({ totalAmount: -1 }).toArray();
+  
+          if (result.length > 0) {
+              res.status(200).json({
+                  success: true,
+                  message: "Volunteer retrieved successfully",
+                  data: result,
+              });
+          } else {
+              res.status(404).json({
+                  success: false,
+                  message: "No Volunteer found",
+                  data: [],
+              });
+          }
+      } catch (error) {
+          res.status(500).json({
+              success: false,
+              message: "Something went wrong!",
+          });
+      }
+    });
+
+    
+    // add Testimonials 
+    app.post("/api/v1/add-testimonials", async (req, res) => {
+      try {
+        const result = await TestimonialsCollection.insertOne(req.body);
+        res.status(201).json({
+          success: true,
+          message: "Testimonials added successfully",
+          data: result,
+        });
+      } catch (error) {
+        res.status(500).json({
+          success: false,
+          message: "Something went wrong!",
+        });
+      }
+    });
+
+    // get testimonials by post id 
+    app.get("/api/v1/all-testimonials/:id", async (req, res) => {
+      try {
+        const {id} =req.params
+        console.log(id)
+        const result = await TestimonialsCollection.find({ postId: id }).toArray();
+
+        if (result) {
+          res.status(200).json({
+            success: true,
+            message: "Testimonials retrieved successfully",
+            data: result,
+          });
+        } else {
+          res.status(404).json({
+            success: false,
+            message: "No testimonials found",
+            data: null,
+          });
+        }
+      } catch (error) {
+    
+        res.status(500).json({
+          success: false,
+          message: "Something went wrong!",
+        });
+      }
+    });
     // ==============================================================
 
     // Start the server
